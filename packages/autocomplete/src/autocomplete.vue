@@ -297,6 +297,8 @@ export default {
 
     // 3. 移除事件监听（关键泄漏点）
     this.$off('item-click');
+    this.suggestions = [];
+    this.highlightedIndex = -1;
   }
 };
 </script>

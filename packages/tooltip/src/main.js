@@ -59,7 +59,9 @@ export default {
     return {
       tooltipId: `el-tooltip-${generateId()}`,
       timeoutPending: null,
-      focusing: false
+      focusing: false,
+      // 【修复】保存 focus 处理函数引用，用于销毁时解绑
+      _focusHandler: null
     };
   },
   beforeCreate() {
@@ -113,18 +115,11 @@ export default {
       this.$el.setAttribute('tabindex', this.tabindex);
       on(this.referenceElm, 'mouseenter', this.show);
       on(this.referenceElm, 'mouseleave', this.hide);
-      on(this.referenceElm, 'focus', () => {
-        if (!this.$slots.default || !this.$slots.default.length) {
-          this.handleFocus();
-          return;
-        }
-        const instance = this.$slots.default[0].componentInstance;
-        if (instance && instance.focus) {
-          instance.focus();
-        } else {
-          this.handleFocus();
-        }
-      });
+
+      // 【修复】把匿名函数抽成具名方法，保存引用
+      this._focusHandler = this.createFocusHandler();
+      on(this.referenceElm, 'focus', this._focusHandler);
+
       on(this.referenceElm, 'blur', this.handleBlur);
       on(this.referenceElm, 'click', this.removeFocusing);
     }
@@ -147,6 +142,23 @@ export default {
     }
   },
   methods: {
+    // 【修复】抽离 focus 逻辑为独立方法
+    createFocusHandler() {
+      const vm = this;
+      return function focusHandler() {
+        if (!vm.$slots.default || !vm.$slots.default.length) {
+          vm.handleFocus();
+          return;
+        }
+        const instance = vm.$slots.default[0].componentInstance;
+        if (instance && instance.focus) {
+          instance.focus();
+        } else {
+          vm.handleFocus();
+        }
+      };
+    },
+
     show() {
       this.setExpectedState(true);
       this.handleShowPopper();
@@ -234,9 +246,13 @@ export default {
     if (reference.nodeType === 1) {
       off(reference, 'mouseenter', this.show);
       off(reference, 'mouseleave', this.hide);
-      off(reference, 'focus', this.handleFocus);
+      // 【修复】销毁时正确解绑 focus 事件
+      this._focusHandler && off(reference, 'focus', this._focusHandler);
       off(reference, 'blur', this.handleBlur);
       off(reference, 'click', this.removeFocusing);
+
+      // 释放引用
+      this._focusHandler = null;
     }
   }
 };

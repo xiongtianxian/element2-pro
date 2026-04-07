@@ -6,7 +6,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const VueLoaderPlugin = require('vue-loader/lib/plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 const launchEditorMiddleware = require('launch-editor-middleware');
 
 const config = require('./config');
@@ -150,10 +150,16 @@ if (isProd) {
     })
   );
   webpackConfig.optimization.minimizer.push(
-    new UglifyJsPlugin({
-      cache: true,
-      parallel: true,
-      sourceMap: false
+    new TerserPlugin({
+      terserOptions: {
+        compress: {
+          warnings: false,
+          drop_debugger: true,
+          drop_console: true
+        }
+      },
+      sourceMap: false,
+      parallel: true // 开启多线程压缩，速度更快！
     }),
     new OptimizeCSSAssetsPlugin({})
   );

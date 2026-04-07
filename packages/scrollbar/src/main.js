@@ -29,7 +29,9 @@ export default {
       sizeWidth: '0',
       sizeHeight: '0',
       moveX: 0,
-      moveY: 0
+      moveY: 0,
+      // 🔥 修复：保存 resize 对象
+      _resizeEl: null
     };
   },
 
@@ -119,12 +121,28 @@ export default {
 
   mounted() {
     if (this.native) return;
-    this.$nextTick(this.update);
-    !this.noresize && addResizeListener(this.$refs.resize, this.update);
+    this.$nextTick(() => {
+      this.update();
+      // 🔥 修复：保存引用
+      this._resizeEl = this.$refs.resize;
+      if (this._resizeEl && !this.noresize) {
+        addResizeListener(this._resizeEl, this.update);
+      }
+    });
   },
 
   beforeDestroy() {
     if (this.native) return;
-    !this.noresize && removeResizeListener(this.$refs.resize, this.update);
+
+    // 🔥 修复：强制移除 + 释放内存
+    if (this._resizeEl && !this.noresize) {
+      removeResizeListener(this._resizeEl, this.update);
+
+      // 🔥 关键：强制释放 ResizeObserver 持有引用
+      this._resizeEl = null;
+    }
+
+    // 🔥 额外保险：清空所有可能的引用
+    this.$refs.resize = null;
   }
 };

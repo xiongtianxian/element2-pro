@@ -60,10 +60,14 @@ export default {
       tooltipId: `el-tooltip-${generateId()}`,
       timeoutPending: null,
       focusing: false,
-      // 【修复】保存 focus 处理函数引用，用于销毁时解绑
-      _focusHandler: null
+      // 保存事件处理函数引用，用于销毁时解绑
+      _focusHandler: null,
+      // 保存定时器引用，用于销毁时清除
+      _showTimeout: null,
+      _hideTimeout: null
     };
   },
+
   beforeCreate() {
     if (this.$isServer) return;
 
@@ -74,29 +78,30 @@ export default {
       }
     }).$mount();
 
+    // 保存 debounce 引用，用于销毁时取消
     this.debounceClose = debounce(200, () => this.handleClosePopper());
   },
 
   render(h) {
     if (this.popperVM) {
       this.popperVM.node = (
-        <transition
-          name={ this.transition }
-          onAfterLeave={ this.doDestroy }>
-          <div
-            onMouseleave={ () => { this.setExpectedState(false); this.debounceClose(); } }
-            onMouseenter= { () => { this.setExpectedState(true); } }
-            ref="popper"
-            role="tooltip"
-            id={this.tooltipId}
-            aria-hidden={ (this.disabled || !this.showPopper) ? 'true' : 'false' }
-            v-show={!this.disabled && this.showPopper}
-            class={
-              ['el-tooltip__popper', 'is-' + this.effect, this.popperClass]
-            }>
-            { this.$slots.content || this.content }
-          </div>
-        </transition>);
+          <transition
+              name={ this.transition }
+              onAfterLeave={ this.doDestroy }>
+            <div
+                onMouseleave={ () => { this.setExpectedState(false); this.debounceClose(); } }
+                onMouseenter= { () => { this.setExpectedState(true); } }
+                ref="popper"
+                role="tooltip"
+                id={this.tooltipId}
+                aria-hidden={ (this.disabled || !this.showPopper) ? 'true' : 'false' }
+                v-show={!this.disabled && this.showPopper}
+                class={
+                  ['el-tooltip__popper', 'is-' + this.effect, this.popperClass]
+                }>
+              { this.$slots.content || this.content }
+            </div>
+          </transition>);
     }
 
     const firstElement = this.getFirstElement();
@@ -116,7 +121,7 @@ export default {
       on(this.referenceElm, 'mouseenter', this.show);
       on(this.referenceElm, 'mouseleave', this.hide);
 
-      // 【修复】把匿名函数抽成具名方法，保存引用
+      // 抽离 focus 处理函数，保存引用
       this._focusHandler = this.createFocusHandler();
       on(this.referenceElm, 'focus', this._focusHandler);
 
@@ -132,6 +137,7 @@ export default {
       });
     }
   },
+
   watch: {
     focusing(val) {
       if (val) {
@@ -141,8 +147,9 @@ export default {
       }
     }
   },
+
   methods: {
-    // 【修复】抽离 focus 逻辑为独立方法
+    // 抽离 focus 逻辑为独立方法
     createFocusHandler() {
       const vm = this;
       return function focusHandler() {
@@ -168,14 +175,17 @@ export default {
       this.setExpectedState(false);
       this.debounceClose();
     },
+
     handleFocus() {
       this.focusing = true;
       this.show();
     },
+
     handleBlur() {
       this.focusing = false;
       this.hide();
     },
+
     removeFocusing() {
       this.focusing = false;
     },
@@ -190,13 +200,15 @@ export default {
 
     handleShowPopper() {
       if (!this.expectedState || this.manual) return;
-      clearTimeout(this.timeout);
-      this.timeout = setTimeout(() => {
+      // 清除旧定时器，保存新定时器引用
+      clearTimeout(this._showTimeout);
+      this._showTimeout = setTimeout(() => {
         this.showPopper = true;
       }, this.openDelay);
 
       if (this.hideAfter > 0) {
-        this.timeoutPending = setTimeout(() => {
+        clearTimeout(this._hideTimeout);
+        this._hideTimeout = setTimeout(() => {
           this.showPopper = false;
         }, this.hideAfter);
       }
@@ -204,11 +216,10 @@ export default {
 
     handleClosePopper() {
       if (this.enterable && this.expectedState || this.manual) return;
-      clearTimeout(this.timeout);
+      // 清除所有定时器
+      clearTimeout(this._showTimeout);
+      clearTimeout(this._hideTimeout);
 
-      if (this.timeoutPending) {
-        clearTimeout(this.timeoutPending);
-      }
       this.showPopper = false;
 
       if (this.disabled) {
@@ -218,7 +229,7 @@ export default {
 
     setExpectedState(expectedState) {
       if (expectedState === false) {
-        clearTimeout(this.timeoutPending);
+        clearTimeout(this._hideTimeout);
       }
       this.expectedState = expectedState;
     },
@@ -234,25 +245,71 @@ export default {
         };
       }
       return element;
+    },
+
+    // 新增：彻底销毁 popperVM 和所有引用
+    doDestroy() {
+      if (this.popperVM) {
+        // 先销毁 popperVM
+        this.popperVM.$destroy();
+        // 手动清空 popperVM 所有引用
+        this.popperVM.node = null;
+        this.popperVM = null;
+      }
+      // 清空 popper DOM 引用
+      if (this.$refs.popper) {
+        this.$refs.popper = null;
+      }
     }
   },
 
   beforeDestroy() {
-    this.popperVM && this.popperVM.$destroy();
+    // 1. 先清除所有定时器
+    clearTimeout(this._showTimeout);
+    clearTimeout(this._hideTimeout);
+    this._showTimeout = null;
+    this._hideTimeout = null;
+
+    // 2. 取消 debounce 闭包
+    if (this.debounceClose && this.debounceClose.cancel) {
+      this.debounceClose.cancel();
+    }
+    this.debounceClose = null;
+
+    // 3. 销毁 popperVM
+    if (this.popperVM) {
+      this.popperVM.$destroy();
+      this.popperVM = null;
+    }
+
+    // 4. 清空所有状态
+    this.showPopper = false;
+    this.expectedState = false;
+    this.focusing = false;
   },
 
   destroyed() {
     const reference = this.referenceElm;
-    if (reference.nodeType === 1) {
+    if (reference && reference.nodeType === 1) {
+      // 解绑所有事件监听器
       off(reference, 'mouseenter', this.show);
       off(reference, 'mouseleave', this.hide);
-      // 【修复】销毁时正确解绑 focus 事件
       this._focusHandler && off(reference, 'focus', this._focusHandler);
       off(reference, 'blur', this.handleBlur);
       off(reference, 'click', this.removeFocusing);
 
-      // 释放引用
-      this._focusHandler = null;
+      // 移除 DOM 属性
+      reference.removeAttribute('aria-describedby');
+      reference.removeAttribute('tabindex');
+      removeClass(reference, 'focusing');
     }
+
+    // 彻底释放所有引用
+    this.referenceElm = null;
+    this._focusHandler = null;
+    this.$el = null;
+    this.$slots = null;
+    this.$parent = null;
+    this.$root = null;
   }
 };

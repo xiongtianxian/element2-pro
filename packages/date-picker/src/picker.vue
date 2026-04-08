@@ -609,7 +609,15 @@ export default {
 
     this.$on('fieldReset', this.handleFieldReset);
   },
-
+  beforeDestroy(){
+    this.unmountPicker();
+    this.doDestroy();
+    this.$off();
+    this.picker = null;
+    this.popperElm = null;
+    this.referenceElm = null;
+    this.$el = null;
+  },
   methods: {
     focus() {
       if (!this.ranged) {

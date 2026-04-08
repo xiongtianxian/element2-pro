@@ -212,7 +212,7 @@ if (typeof window !== 'undefined' && window.Vue) {
 }
 
 export default {
-  version: '2.15.14-hc.1',
+  version: '2.15.15-hc.1',
   locale: locale.use,
   i18n: locale.i18n,
   install,

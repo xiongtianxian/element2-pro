@@ -220,18 +220,44 @@ export default {
   },
 
   destroyed() {
-    const reference = this.reference;
+    const ref = this.referenceElm;
+    const popper = this.$refs.popper;
 
-    off(reference, 'click', this.doToggle);
-    off(reference, 'mouseup', this.doClose);
-    off(reference, 'mousedown', this.doShow);
-    off(reference, 'focusin', this.doShow);
-    off(reference, 'focusout', this.doClose);
-    off(reference, 'mousedown', this.doShow);
-    off(reference, 'mouseup', this.doClose);
-    off(reference, 'mouseleave', this.handleMouseLeave);
-    off(reference, 'mouseenter', this.handleMouseEnter);
+    // 1. 解绑所有事件
+    if (ref) {
+      off(ref, 'keydown', this.handleKeydown);
+      off(ref, 'click', this.handleClick);
+      off(ref, 'focusin', this.handleFocus);
+      off(ref, 'focusout', this.handleBlur);
+      off(ref, 'click', this.doToggle);
+      off(ref, 'mouseenter', this.handleMouseEnter);
+      off(ref, 'mouseleave', this.handleMouseLeave);
+      off(ref, 'mousedown', this.doShow);
+      off(ref, 'mouseup', this.doClose);
+      off(ref, 'focusin', this.doShow);
+      off(ref, 'focusout', this.doClose);
+    }
+    if (popper) {
+      off(popper, 'focusin', this.handleFocus);
+      off(popper, 'focusout', this.handleBlur);
+      off(popper, 'mouseenter', this.handleMouseEnter);
+      off(popper, 'mouseleave', this.handleMouseLeave);
+    }
     off(document, 'click', this.handleDocumentClick);
+
+    // 2. 销毁 popperJS 实例
+    if (this.popperJS) {
+      this.popperJS.destroy();
+      this.popperJS = null;
+    }
+
+    // 3. 清空DOM强引用
+    this.referenceElm = null;
+    this.popper = null;
+    this.$el = null;
+
+    // 4. 清空事件
+    this.$off();
   }
 };
 </script>

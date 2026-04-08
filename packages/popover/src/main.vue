@@ -253,7 +253,6 @@ export default {
 
     // 3. 清空DOM强引用
     this.referenceElm = null;
-    this.popper = null;
     this.$el = null;
 
     // 4. 清空事件

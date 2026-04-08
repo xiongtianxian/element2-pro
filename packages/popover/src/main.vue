@@ -258,7 +258,6 @@ export default {
     }
 
     this.referenceElm = null;
-    this.popper = null;
     this.$el = null;
     this.$off();
   }

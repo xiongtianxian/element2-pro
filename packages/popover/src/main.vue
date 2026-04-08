@@ -1,18 +1,18 @@
 <template>
   <span>
     <transition
-      :name="transition"
-      @after-enter="handleAfterEnter"
-      @after-leave="handleAfterLeave">
+        :name="transition"
+        @after-enter="handleAfterEnter"
+        @after-leave="handleAfterLeave">
       <div
-        class="el-popover el-popper"
-        :class="[popperClass, content && 'el-popover--plain']"
-        ref="popper"
-        v-show="!disabled && showPopper"
-        :style="{ width: width + 'px' }"
-        role="tooltip"
-        :id="tooltipId"
-        :aria-hidden="(disabled || !showPopper) ? 'true' : 'false'"
+          class="el-popover el-popper"
+          :class="[popperClass, content && 'el-popover--plain']"
+          ref="popper"
+          v-show="!disabled && showPopper"
+          :style="{ width: width + 'px' }"
+          role="tooltip"
+          :id="tooltipId"
+          :aria-hidden="(disabled || !showPopper) ? 'true' : 'false'"
       >
         <div class="el-popover__title" v-if="title" v-text="title"></div>
         <slot>{{ content }}</slot>
@@ -23,6 +23,7 @@
     </span>
   </span>
 </template>
+
 <script>
 import Popper from 'element-ui/src/utils/vue-popper';
 import { on, off } from 'element-ui/src/utils/dom';
@@ -92,21 +93,15 @@ export default {
     if (!reference && this.$refs.wrapper.children) {
       reference = this.referenceElm = this.$refs.wrapper.children[0];
     }
-    // 可访问性
     if (reference) {
       addClass(reference, 'el-popover__reference');
       reference.setAttribute('aria-describedby', this.tooltipId);
-      reference.setAttribute('tabindex', this.tabindex); // tab序列
+      reference.setAttribute('tabindex', this.tabindex);
       popper.setAttribute('tabindex', 0);
 
       if (this.trigger !== 'click') {
-        on(reference, 'focusin', () => {
-          this.handleFocus();
-          const instance = reference.__vue__;
-          if (instance && typeof instance.focus === 'function') {
-            instance.focus();
-          }
-        });
+        // ✅ 修复：使用具名函数，不再使用匿名函数！
+        on(reference, 'focusin', this._handleReferenceFocusin);
         on(popper, 'focusin', this.handleFocus);
         on(reference, 'focusout', this.handleBlur);
         on(popper, 'focusout', this.handleBlur);
@@ -136,8 +131,18 @@ export default {
     }
   },
 
+  // ✅ 修复：强制关闭 + 销毁 popper
   beforeDestroy() {
+    // 1. 强制失焦
+    if (document.activeElement && this.$el.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+
+    // 3. 清理定时器
     this.cleanup();
+
+    // 4. 立即销毁popper
+    this.doDestroy();
   },
 
   deactivated() {
@@ -145,6 +150,15 @@ export default {
   },
 
   methods: {
+    // ✅ 修复：把匿名函数抽出来，变成具名函数，方便解绑
+    _handleReferenceFocusin() {
+      this.handleFocus();
+      const instance = this.referenceElm.__vue__;
+      if (instance && typeof instance.focus === 'function') {
+        instance.focus();
+      }
+    },
+
     doToggle() {
       this.showPopper = !this.showPopper;
     },
@@ -176,7 +190,7 @@ export default {
       }
     },
     handleKeydown(ev) {
-      if (ev.keyCode === 27 && this.trigger !== 'manual') { // esc
+      if (ev.keyCode === 27 && this.trigger !== 'manual') {
         this.doClose();
       }
     },
@@ -197,12 +211,7 @@ export default {
       if (!reference && this.$refs.wrapper.children) {
         reference = this.referenceElm = this.$refs.wrapper.children[0];
       }
-      if (!this.$el ||
-        !reference ||
-        this.$el.contains(e.target) ||
-        reference.contains(e.target) ||
-        !popper ||
-        popper.contains(e.target)) return;
+      if (!this.$el || !reference || this.$el.contains(e.target) || reference.contains(e.target) || !popper || popper.contains(e.target)) return;
       this.showPopper = false;
     },
     handleAfterEnter() {
@@ -213,9 +222,7 @@ export default {
       this.doDestroy();
     },
     cleanup() {
-      if (this.openDelay || this.closeDelay) {
-        clearTimeout(this._timer);
-      }
+      clearTimeout(this._timer);
     }
   },
 
@@ -223,11 +230,11 @@ export default {
     const ref = this.referenceElm;
     const popper = this.$refs.popper;
 
-    // 1. 解绑所有事件
     if (ref) {
       off(ref, 'keydown', this.handleKeydown);
       off(ref, 'click', this.handleClick);
-      off(ref, 'focusin', this.handleFocus);
+      // ✅ 修复：解绑抽出来的具名函数
+      off(ref, 'focusin', this._handleReferenceFocusin);
       off(ref, 'focusout', this.handleBlur);
       off(ref, 'click', this.doToggle);
       off(ref, 'mouseenter', this.handleMouseEnter);
@@ -245,17 +252,14 @@ export default {
     }
     off(document, 'click', this.handleDocumentClick);
 
-    // 2. 销毁 popperJS 实例
     if (this.popperJS) {
       this.popperJS.destroy();
       this.popperJS = null;
     }
 
-    // 3. 清空DOM强引用
     this.referenceElm = null;
+    this.popper = null;
     this.$el = null;
-
-    // 4. 清空事件
     this.$off();
   }
 };

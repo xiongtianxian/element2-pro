@@ -63,17 +63,27 @@ Message.close = function(id, userOnClose) {
   let len = instances.length;
   let index = -1;
   let removedHeight;
+  let closedInstance = null; // 新增
+
   for (let i = 0; i < len; i++) {
     if (id === instances[i].id) {
       removedHeight = instances[i].$el.offsetHeight;
       index = i;
+      closedInstance = instances[i];
+
       if (typeof userOnClose === 'function') {
-        userOnClose(instances[i]);
+        userOnClose(closedInstance);
       }
       instances.splice(i, 1);
       break;
     }
   }
+
+  if (closedInstance) {
+    closedInstance.$destroy();
+    closedInstance.$el = null;
+  }
+
   if (len <= 1 || index === -1 || index > instances.length - 1) return;
   for (let i = index; i < len - 1 ; i++) {
     let dom = instances[i].$el;

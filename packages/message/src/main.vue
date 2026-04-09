@@ -74,8 +74,12 @@
 
     methods: {
       handleAfterLeave() {
-        this.$destroy(true);
-        this.$el.parentNode.removeChild(this.$el);
+        // 1. 先移除 DOM
+        if (this.$el.parentNode) {
+          this.$el.parentNode.removeChild(this.$el);
+        }
+        // 2. 再正确销毁实例（无参数）
+        this.$destroy();
       },
 
       close() {

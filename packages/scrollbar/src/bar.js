@@ -82,11 +82,14 @@ export default {
       this.cursorDown = false;
       this[this.bar.axis] = 0;
       off(document, 'mousemove', this.mouseMoveDocumentHandler);
+      off(document, 'mouseup', this.mouseUpDocumentHandler); // 🔥 修复这里
       document.onselectstart = null;
     }
   },
 
   destroyed() {
+    off(document, 'mousemove', this.mouseMoveDocumentHandler);
     off(document, 'mouseup', this.mouseUpDocumentHandler);
+    document.onselectstart = null;
   }
 };

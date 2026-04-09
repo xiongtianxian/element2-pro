@@ -45,17 +45,28 @@ loadingDirective.install = Vue => {
       });
     } else {
       afterLeave(el.instance, _ => {
-        if (!el.instance.hiding) return;
+        // ✅ 安全写法：只保护 instance 相关，不中断清理！
+        const instance = el.instance;
+
+        // 清理样式（这部分必须执行！）
         el.domVisible = false;
         const target = binding.modifiers.fullscreen || binding.modifiers.body
-          ? document.body
-          : el;
+            ? document.body
+            : el;
         removeClass(target, 'el-loading-parent--relative');
         removeClass(target, 'el-loading-parent--hidden');
-        el.instance.hiding = false;
+
+        // ✅ 只有 instance 存在时，才操作 hiding
+        if (instance && instance.hiding) {
+          instance.hiding = false;
+        }
       }, 300, true);
-      el.instance.visible = false;
-      el.instance.hiding = true;
+
+      // ✅ 这里也要加判空，防止 unbind 时已经销毁
+      if (el.instance) {
+        el.instance.visible = false;
+        el.instance.hiding = true;
+      }
     }
   };
   const insertDom = (parent, el, binding) => {

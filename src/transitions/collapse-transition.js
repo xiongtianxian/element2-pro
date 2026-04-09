@@ -33,6 +33,11 @@ class Transition {
     removeClass(el, 'collapse-transition');
     el.style.height = '';
     el.style.overflow = el.dataset.oldOverflow;
+
+    // 👇 新增 2 行：清空 dataset，解决泄漏
+    delete el.dataset.oldPaddingTop;
+    delete el.dataset.oldPaddingBottom;
+    delete el.dataset.oldOverflow;
   }
 
   beforeLeave(el) {
@@ -61,6 +66,11 @@ class Transition {
     el.style.overflow = el.dataset.oldOverflow;
     el.style.paddingTop = el.dataset.oldPaddingTop;
     el.style.paddingBottom = el.dataset.oldPaddingBottom;
+
+    // 👇 新增 2 行：清空 dataset，解决泄漏
+    delete el.dataset.oldPaddingTop;
+    delete el.dataset.oldPaddingBottom;
+    delete el.dataset.oldOverflow;
   }
 }
 

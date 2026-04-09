@@ -63,19 +63,13 @@ Message.close = function(id, userOnClose) {
   let len = instances.length;
   let index = -1;
   let removedHeight;
-  let closedInstance = null; // 新增
-
   for (let i = 0; i < len; i++) {
     if (id === instances[i].id) {
       removedHeight = instances[i].$el.offsetHeight;
       index = i;
-      closedInstance = instances[i];
-
       if (typeof userOnClose === 'function') {
-        userOnClose(closedInstance);
+        userOnClose(instances[i]);
       }
-      // 1. 先触发组件的 close 方法，让动画正常执行
-      closedInstance.close();
       instances.splice(i, 1);
       break;
     }

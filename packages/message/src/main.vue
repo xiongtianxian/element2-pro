@@ -80,45 +80,47 @@
         }
         // 2. 再正确销毁实例（无参数）
         this.$destroy(true);
+        this.$el = null;
       },
 
-      close() {
-        this.closed = true;
-        if (typeof this.onClose === 'function') {
-          this.onClose(this);
-        }
-      },
+    close() {
+      this.closed = true;
+      if (typeof this.onClose === 'function') {
+        this.onClose(this);
+      }
+      // 🔥 关闭时立即清理定时器，避免闭包残留
+      clearTimeout(this.timer);
+      this.timer = null;
+    },
 
-      clearTimer() {
-        clearTimeout(this.timer);
-        this.timer = null;
-      },
+    clearTimer() {
+      clearTimeout(this.timer);
+      this.timer = null;
+    },
 
-      startTimer() {
-        if (this.duration > 0) {
-          this.timer = setTimeout(() => {
-            if (!this.closed) {
-              this.close();
-            }
-          }, this.duration);
-        }
-      },
-      keydown(e) {
-        if (e.keyCode === 27) { // esc关闭消息
+    startTimer() {
+      if (this.duration > 0) {
+        this.timer = setTimeout(() => {
           if (!this.closed) {
             this.close();
           }
-        }
+        }, this.duration);
       }
-    },
-    mounted() {
-      this.startTimer();
-      document.addEventListener('keydown', this.keydown);
-    },
-    beforeDestroy() {
-      document.removeEventListener('keydown', this.keydown);
-      //销毁时清空定时器，避免闭包残留
-      clearTimeout(this.timer);
     }
-  };
+  },
+
+  mounted() {
+    this.startTimer();
+    document.addEventListener('keydown', this.keydown);
+  },
+
+  beforeDestroy() {
+    // 1. 移除键盘事件
+    document.removeEventListener('keydown', this.keydown);
+    // 2. 彻底清理定时器
+    clearTimeout(this.timer);
+    this.timer = null;
+
+  }
+};
 </script>

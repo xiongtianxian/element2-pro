@@ -79,7 +79,7 @@
           this.$el.parentNode.removeChild(this.$el);
         }
         // 2. 再正确销毁实例（无参数）
-        this.$destroy();
+        this.$destroy(true);
       },
 
       close() {

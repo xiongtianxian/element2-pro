@@ -188,6 +188,10 @@ export default {
     if (this.popperElm && this.popperElm.parentNode === document.body) {
       this.popperElm.removeEventListener('click', stop);
       document.body.removeChild(this.popperElm);
+
+      // 👇👇 只加这 2 行，修复 100% 泄漏
+      this.popperElm = null;
+      this.popperJS = null;
     }
   },
 

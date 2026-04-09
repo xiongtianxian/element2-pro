@@ -1,14 +1,10 @@
-// reference https://github.com/noeldelgado/gemini-scrollbar/blob/master/index.js
-
 import { addResizeListener, removeResizeListener } from 'element-ui/src/utils/resize-event';
 import scrollbarWidth from 'element-ui/src/utils/scrollbar-width';
 import { toObject } from 'element-ui/src/utils/util';
 import Bar from './bar';
 
-/* istanbul ignore next */
 export default {
   name: 'ElScrollbar',
-
   components: { Bar },
 
   props: {
@@ -17,11 +13,8 @@ export default {
     wrapClass: {},
     viewClass: {},
     viewStyle: {},
-    noresize: Boolean, // 如果 container 尺寸不会发生变化，最好设置它可以优化性能
-    tag: {
-      type: String,
-      default: 'div'
-    }
+    noresize: Boolean,
+    tag: { type: String, default: 'div' }
   },
 
   data() {
@@ -29,9 +22,7 @@ export default {
       sizeWidth: '0',
       sizeHeight: '0',
       moveX: 0,
-      moveY: 0,
-      // 🔥 修复：保存 resize 对象
-      _resizeEl: null
+      moveY: 0
     };
   },
 
@@ -42,107 +33,92 @@ export default {
   },
 
   render(h) {
-    let gutter = scrollbarWidth();
+    const gutter = scrollbarWidth();
     let style = this.wrapStyle;
 
     if (gutter) {
-      const gutterWith = `-${gutter}px`;
-      const gutterStyle = `margin-bottom: ${gutterWith}; margin-right: ${gutterWith};`;
+      const gutterWidth = `-${gutter}px`;
+      const gutterStyle = `margin-bottom: ${gutterWidth}; margin-right: ${gutterWidth};`;
 
       if (Array.isArray(this.wrapStyle)) {
         style = toObject(this.wrapStyle);
-        style.marginRight = style.marginBottom = gutterWith;
+        style.marginRight = style.marginBottom = gutterWidth;
       } else if (typeof this.wrapStyle === 'string') {
         style += gutterStyle;
       } else {
         style = gutterStyle;
       }
     }
+
     const view = h(this.tag, {
       class: ['el-scrollbar__view', this.viewClass],
       style: this.viewStyle,
       ref: 'resize'
     }, this.$slots.default);
-    const wrap = (
-      <div
-        ref="wrap"
-        style={ style }
-        onScroll={ this.handleScroll }
-        class={ [this.wrapClass, 'el-scrollbar__wrap', gutter ? '' : 'el-scrollbar__wrap--hidden-default'] }>
-        { [view] }
-      </div>
-    );
-    let nodes;
 
-    if (!this.native) {
-      nodes = ([
-        wrap,
-        <Bar
-          move={ this.moveX }
-          size={ this.sizeWidth }></Bar>,
-        <Bar
-          vertical
-          move={ this.moveY }
-          size={ this.sizeHeight }></Bar>
-      ]);
-    } else {
-      nodes = ([
-        <div
-          ref="wrap"
-          class={ [this.wrapClass, 'el-scrollbar__wrap'] }
-          style={ style }>
-          { [view] }
+    const wrap = (
+        <div ref="wrap"
+             style={style}
+             onScroll={this.handleScroll}
+             class={[this.wrapClass, 'el-scrollbar__wrap', gutter ? '' : 'el-scrollbar__wrap--hidden-default']}>
+          {[view]}
         </div>
-      ]);
-    }
+    );
+
+    const nodes = !this.native
+        ? [
+          wrap,
+          <Bar move={this.moveX} size={this.sizeWidth} />,
+          <Bar vertical move={this.moveY} size={this.sizeHeight} />
+        ]
+        : [
+          <div ref="wrap" class={[this.wrapClass, 'el-scrollbar__wrap']} style={style}>{[view]}</div>
+        ];
+
     return h('div', { class: 'el-scrollbar' }, nodes);
   },
 
   methods: {
     handleScroll() {
       const wrap = this.wrap;
+      if (!wrap) return;
 
-      this.moveY = ((wrap.scrollTop * 100) / wrap.clientHeight);
-      this.moveX = ((wrap.scrollLeft * 100) / wrap.clientWidth);
+      this.moveY = (wrap.scrollTop * 100) / wrap.clientHeight;
+      this.moveX = (wrap.scrollLeft * 100) / wrap.clientWidth;
     },
 
     update() {
-      let heightPercentage, widthPercentage;
       const wrap = this.wrap;
       if (!wrap) return;
 
-      heightPercentage = (wrap.clientHeight * 100 / wrap.scrollHeight);
-      widthPercentage = (wrap.clientWidth * 100 / wrap.scrollWidth);
+      // 计算一次，复用值（更优雅、性能更好）
+      const heightPercent = (wrap.clientHeight * 100) / wrap.scrollHeight;
+      const widthPercent = (wrap.clientWidth * 100) / wrap.scrollWidth;
 
-      this.sizeHeight = (heightPercentage < 100) ? (heightPercentage + '%') : '';
-      this.sizeWidth = (widthPercentage < 100) ? (widthPercentage + '%') : '';
+      this.sizeHeight = heightPercent < 100 ? heightPercent + '%' : '';
+      this.sizeWidth = widthPercent < 100 ? widthPercent + '%' : '';
     }
   },
 
   mounted() {
     if (this.native) return;
-    this.$nextTick(() => {
-      this.update();
-      // 🔥 修复：保存引用
-      this._resizeEl = this.$refs.resize;
-      if (this._resizeEl && !this.noresize) {
-        addResizeListener(this._resizeEl, this.update);
-      }
-    });
+    this.update();
+
+    if (this.$refs.resize && !this.noresize) {
+      addResizeListener(this.$refs.resize, this.update);
+    }
   },
 
   beforeDestroy() {
     if (this.native) return;
 
-    // 🔥 修复：强制移除 + 释放内存
-    if (this._resizeEl && !this.noresize) {
-      removeResizeListener(this._resizeEl, this.update);
-
-      // 🔥 关键：强制释放 ResizeObserver 持有引用
-      this._resizeEl = null;
+    // 安全移除监听
+    if (this.$refs.resize && !this.noresize) {
+      removeResizeListener(this.$refs.resize, this.update);
     }
 
-    // 🔥 额外保险：清空所有可能的引用
+    // 强制切断 DOM 引用，确保 GC 回收
     this.$refs.resize = null;
+    this.$refs.wrap = null;
   }
 };

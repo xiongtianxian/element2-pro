@@ -74,16 +74,12 @@ Message.close = function(id, userOnClose) {
       if (typeof userOnClose === 'function') {
         userOnClose(closedInstance);
       }
+      // 1. 先触发组件的 close 方法，让动画正常执行
+      closedInstance.close();
       instances.splice(i, 1);
       break;
     }
   }
-
-  if (closedInstance) {
-    closedInstance.$destroy();
-    closedInstance.$el = null;
-  }
-
   if (len <= 1 || index === -1 || index > instances.length - 1) return;
   for (let i = index; i < len - 1 ; i++) {
     let dom = instances[i].$el;

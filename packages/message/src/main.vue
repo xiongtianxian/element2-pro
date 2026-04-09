@@ -91,6 +91,7 @@
 
       clearTimer() {
         clearTimeout(this.timer);
+        this.timer = null;
       },
 
       startTimer() {
@@ -116,6 +117,8 @@
     },
     beforeDestroy() {
       document.removeEventListener('keydown', this.keydown);
+      //销毁时清空定时器，避免闭包残留
+      clearTimeout(this.timer);
     }
   };
 </script>

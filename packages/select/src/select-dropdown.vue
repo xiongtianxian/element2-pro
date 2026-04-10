@@ -69,6 +69,10 @@
         if (this.$parent.visible) this.updatePopper();
       });
       this.$on('destroyPopper', this.destroyPopper);
-    }
+    },
+    beforeDestroy() {
+      this.$off('updatePopper');
+      this.$off('destroyPopper');
+    },
   };
 </script>

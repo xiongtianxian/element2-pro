@@ -1,19 +1,9 @@
 import Vue from 'vue';
-import {
-  PopupManager
-} from 'element-ui/src/utils/popup';
+import { PopupManager } from 'element-ui/src/utils/popup';
 
 const PopperJS = Vue.prototype.$isServer ? function() {} : require('./popper');
 const stop = e => e.stopPropagation();
 
-/**
- * @param {HTMLElement} [reference=$refs.reference] - The reference element used to position the popper.
- * @param {HTMLElement} [popper=$refs.popper] - The HTML element used as popper, or a configuration used to generate the popper.
- * @param {String} [placement=button] - Placement of the popper accepted values: top(-start, -end), right(-start, -end), bottom(-start, -end), left(-start, -end)
- * @param {Number} [offset=0] - Amount of pixels the popper will be shifted (can be negative).
- * @param {Boolean} [visible=false] Visibility of the popup element.
- * @param {Boolean} [visible-arrow=false] Visibility of the arrow, no style.
- */
 export default {
   props: {
     transformOrigin: {
@@ -56,7 +46,8 @@ export default {
   data() {
     return {
       showPopper: false,
-      currentPlacement: ''
+      currentPlacement: '',
+      appended: false
     };
   },
 
@@ -89,8 +80,8 @@ export default {
       let reference = this.referenceElm = this.referenceElm || this.reference || this.$refs.reference;
 
       if (!reference &&
-        this.$slots.reference &&
-        this.$slots.reference[0]) {
+          this.$slots.reference &&
+          this.$slots.reference[0]) {
         reference = this.referenceElm = this.$slots.reference[0].elm;
       }
 
@@ -130,7 +121,6 @@ export default {
     },
 
     doDestroy(forceDestroy) {
-      /* istanbul ignore if */
       if (!this.popperJS || (this.showPopper && !forceDestroy)) return;
       this.popperJS.destroy();
       this.popperJS = null;
@@ -153,8 +143,8 @@ export default {
       let placement = this.popperJS._popper.getAttribute('x-placement').split('-')[0];
       let origin = placementMap[placement];
       this.popperJS._popper.style.transformOrigin = typeof this.transformOrigin === 'string'
-        ? this.transformOrigin
-        : ['top', 'bottom'].indexOf(placement) > -1 ? `center ${ origin }` : `${ origin } center`;
+          ? this.transformOrigin
+          : ['top', 'bottom'].indexOf(placement) > -1 ? `center ${ origin }` : `${ origin } center`;
     },
 
     appendArrow(element) {
@@ -184,19 +174,28 @@ export default {
   },
 
   beforeDestroy() {
+    // 完全清理 popper 实例
     this.doDestroy(true);
-    if (this.popperElm && this.popperElm.parentNode === document.body) {
-      this.popperElm.removeEventListener('click', stop);
-      document.body.removeChild(this.popperElm);
 
-      // 👇👇 只加这 2 行，修复 100% 泄漏
-      this.popperElm = null;
-      this.popperJS = null;
+    // 清理 DOM 事件
+    if (this.popperElm) {
+      this.popperElm.removeEventListener('click', stop);
     }
+
+    // 从 body 移除节点
+    if (this.popperElm && this.popperElm.parentNode === document.body) {
+      document.body.removeChild(this.popperElm);
+    }
+
+    // 🔥 关键：置空所有引用
+    this.popperJS = null;
+    this.popperElm = null;
+    this.referenceElm = null;
+    this.appended = false;
   },
 
-  // call destroy in keep-alive mode
   deactivated() {
-    this.$options.beforeDestroy[0].call(this);
+    // keep-alive 也强制清理
+    this.beforeDestroy();
   }
 };

@@ -895,6 +895,15 @@
 
     beforeDestroy() {
       if (this.$el && this.handleResize) removeResizeListener(this.$el, this.handleResize);
+
+      // 4. 清空选项数组（释放引用）
+      this.options = [];
+      this.cachedOptions = [];
+      this.selected = null;
+
+      // 5. 移除所有自定义事件监听
+      this.$off('handleOptionClick');
+      this.$off('setSelected');
     }
   };
 </script>

@@ -211,27 +211,51 @@
 
         let dropdownElm = this.dropdownElm;
 
-        this.triggerElm.addEventListener('keydown', handleTriggerKeyDown); // triggerElm keydown
-        dropdownElm.addEventListener('keydown', handleItemKeyDown, true); // item keydown
+        // 保存所有事件句柄 → 用于销毁
+        this._handleTriggerKeyDown = this.handleTriggerKeyDown.bind(this);
+        this._handleItemKeyDown = this.handleItemKeyDown.bind(this);
+
+        this.triggerElm.addEventListener('keydown', this._handleTriggerKeyDown);
+        dropdownElm.addEventListener('keydown', this._handleItemKeyDown, true);
+
         // 控制自定义元素的样式
         if (!splitButton) {
-          this.triggerElm.addEventListener('focus', () => {
-            this.focusing = true;
-          });
-          this.triggerElm.addEventListener('blur', () => {
-            this.focusing = false;
-          });
-          this.triggerElm.addEventListener('click', () => {
-            this.focusing = false;
-          });
+          this.triggerElm.addEventListener('focus', this._onFocus = () => { this.focusing = true; });
+          this.triggerElm.addEventListener('blur', this._onBlur = () => { this.focusing = false; });
+          this.triggerElm.addEventListener('click', this._onClick = () => { this.focusing = false; });
         }
+
         if (trigger === 'hover') {
-          this.triggerElm.addEventListener('mouseenter', show);
-          this.triggerElm.addEventListener('mouseleave', hide);
-          dropdownElm.addEventListener('mouseenter', show);
-          dropdownElm.addEventListener('mouseleave', hide);
+          this.triggerElm.addEventListener('mouseenter', this._onMouseEnter = show);
+          this.triggerElm.addEventListener('mouseleave', this._onMouseLeave = hide);
+          dropdownElm.addEventListener('mouseenter', this._onMouseEnter);
+          dropdownElm.addEventListener('mouseleave', this._onMouseLeave);
         } else if (trigger === 'click') {
-          this.triggerElm.addEventListener('click', handleClick);
+          this.triggerElm.addEventListener('click', this._onHandleClick = handleClick);
+        }
+      },
+      // ==============================================
+      // 🔥 核心：移除所有 DOM 事件
+      // ==============================================
+      removeAllDOMListeners() {
+        if (!this.triggerElm || !this.dropdownElm) return;
+
+        this.triggerElm.removeEventListener('keydown', this._handleTriggerKeyDown);
+        this.dropdownElm.removeEventListener('keydown', this._handleItemKeyDown, true);
+
+        if (!this.splitButton) {
+          this.triggerElm.removeEventListener('focus', this._onFocus);
+          this.triggerElm.removeEventListener('blur', this._onBlur);
+          this.triggerElm.removeEventListener('click', this._onClick);
+        }
+
+        if (this.trigger === 'hover') {
+          this.triggerElm.removeEventListener('mouseenter', this._onMouseEnter);
+          this.triggerElm.removeEventListener('mouseleave', this._onMouseLeave);
+          this.dropdownElm.removeEventListener('mouseenter', this._onMouseEnter);
+          this.dropdownElm.removeEventListener('mouseleave', this._onMouseLeave);
+        } else if (this.trigger === 'click') {
+          this.triggerElm.removeEventListener('click', this._onHandleClick);
         }
       },
       handleMenuItemClick(command, instance) {
@@ -288,6 +312,30 @@
           {menuElm}
         </div>
       );
-    }
+    },
+
+    // ==============================================
+    // 🔥 最终修复：完整版销毁逻辑（你之前缺失的全部补上）
+    // ==============================================
+    beforeDestroy() {
+      // 1. 清理自定义事件
+      this.$off('menu-item-click', this.handleMenuItemClick);
+
+      // 2. 清理所有手动 addEventListener DOM 事件
+      this.removeAllDOMListeners();
+
+      // 3. 清理定时器
+      clearTimeout(this.timeout);
+
+      // 4. 清空强引用，帮助 GC
+      this.triggerElm = null;
+      this.dropdownElm = null;
+      this.menuItemsArray = null;
+    },
+
+    deactivated() {
+      this.beforeDestroy();
+    },
+
   };
 </script>

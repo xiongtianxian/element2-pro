@@ -154,15 +154,29 @@
 
     beforeDestroy() {
       const { selected, multiple } = this.select;
-      let selectedOptions = multiple ? selected : [selected];
-      let index = this.select.cachedOptions.indexOf(this);
+      // 1. 空值保护：确保 selectedOptions 永远是数组
+      let selectedOptions = multiple
+          ? (selected || [])  // 多选：selected 可能为 null/undefined，兜底空数组
+          : (selected ? [selected] : []); // 单选：selected 为 null 时，兜底空数组
+
+      // 2. 空值保护：cachedOptions 可能为 null（极端场景）
+      const cachedOptions = this.select.cachedOptions || [];
+      let index = cachedOptions.indexOf(this);
+
+      // 3. 空值保护：selectedOptions 已确保是数组，安全调用 indexOf
       let selectedIndex = selectedOptions.indexOf(this);
+
+      // 4. 空值保护：options 可能为 null
+      const options = this.select.options || [];
+      const optionIndex = options.indexOf(this);
 
       // if option is not selected, remove it from cache
       if (index > -1 && selectedIndex < 0) {
-        this.select.cachedOptions.splice(index, 1);
+        cachedOptions.splice(index, 1);
       }
-      this.select.onOptionDestroy(this.select.options.indexOf(this));
+
+      // 5. 空值保护：onOptionDestroy 入参为 -1 时，父组件做兼容处理
+      this.select.onOptionDestroy(optionIndex);
     }
   };
 </script>

@@ -158,6 +158,19 @@
         quicknextIconClass: 'el-icon-more',
         quickprevIconClass: 'el-icon-more'
       };
+    },
+    beforeDestroy() {
+      // 强制清空所有事件绑定
+      this.$off();
+
+      // 强制清空 DOM 引用
+      this.$el = null;
+
+      // 强制清空数据引用
+      this.showPrevMore = null;
+      this.showNextMore = null;
+      this.quickprevIconClass = null;
+      this.quicknextIconClass = null;
     }
   };
 </script>

@@ -176,8 +176,7 @@ export default {
               popperClass={ this.$parent.popperClass || '' }
               size="mini"
               on-input={ this.handleChange }
-              disabled={ this.$parent.disabled }
-              popperAppendToBody={ false }>
+              disabled={ this.$parent.disabled }>
               {
                 this.pageSizes.map(item =>
                   <el-option

@@ -194,7 +194,10 @@ export default {
         ElSelect,
         ElOption
       },
-
+      beforeDestroy() {
+        this.$off()
+        this.$parent = null
+      },
       methods: {
         handleChange(val) {
           if (val !== this.$parent.internalPageSize) {
@@ -223,7 +226,15 @@ export default {
           this.userInput = null;
         }
       },
-
+      // 👇 新增：唯一修复代码，安全无副作用
+      beforeDestroy() {
+        // 1. 移除组件所有自定义事件/侦听器
+        this.$off();
+        // 2. 切断父组件引用，打破循环依赖链
+        this.$parent = null;
+        // 3. 置空响应式数据，释放引用
+        this.userInput = null;
+      },
       methods: {
         handleKeyup({ keyCode, target }) {
           // Chrome, Safari, Firefox triggers change event on Enter

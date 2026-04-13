@@ -22,7 +22,7 @@ import { Locale } from 'element-ui/src/mixins/locale';
 import ElInput from 'element-ui/packages/input';
 
 export default {
-  name: 'ElPaginationJumper',
+  name: 'Jumper',
   mixins: [Locale],
   components: { ElInput },
   props: {

@@ -12,7 +12,7 @@
 
 <script>
 export default {
-  name: 'ElPaginationNext',
+  name: 'Next',
   props: {
     disabled: Boolean,
     currentPage: Number,

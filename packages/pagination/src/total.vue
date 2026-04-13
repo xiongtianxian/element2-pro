@@ -8,7 +8,7 @@
 import { Locale } from 'element-ui/src/mixins/locale';
 
 export default {
-  name: 'ElPaginationTotal',
+  name: 'Total',
   mixins: [Locale],
   props: {
     total: Number

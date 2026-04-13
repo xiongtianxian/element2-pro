@@ -25,7 +25,7 @@ import ElSelect from 'element-ui/packages/select';
 import ElOption from 'element-ui/packages/option';
 
 export default {
-  name: 'ElPaginationSizes',
+  name: 'Sizes',
   mixins: [Locale],
   components: { ElSelect, ElOption },
   props: {
@@ -64,14 +64,6 @@ export default {
     }
   },
   beforeDestroy() {
-    // 强制关闭ElSelect，触发popper销毁
-    if (this.$refs.sizeSelect) {
-      this.$refs.sizeSelect.visible = false;
-      // 强制销毁popper
-      if (this.$refs.sizeSelect.$refs.popper) {
-        this.$refs.sizeSelect.$refs.popper.doDestroy(true);
-      }
-    }
     this.$off();
     this.internalPageSize = null;
   }

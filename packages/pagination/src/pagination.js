@@ -7,13 +7,14 @@ import Total from './total.vue';
 
 export default {
   name: 'ElPagination',
+  // 👇 关键修复：组件名必须和模板中使用的完全一致！
   components: {
     Pager,
-    ElPaginationPrev: Prev,
-    ElPaginationNext: Next,
-    ElPaginationSizes: Sizes,
-    ElPaginationJumper: Jumper,
-    ElPaginationTotal: Total
+    Prev,
+    Next,
+    Sizes,
+    Jumper,
+    Total
   },
   props: {
     pageSize: {
@@ -63,7 +64,8 @@ export default {
     if (!layout) return null;
     if (this.hideOnSinglePage && (!this.internalPageCount || this.internalPageCount === 1)) return null;
 
-    let template = h('div', {
+    // 👇 修复：模板根节点创建方式，完全兼容Vue2
+    const template = h('div', {
       class: [
         'el-pagination',
         {
@@ -72,9 +74,10 @@ export default {
         }
       ]
     });
-    // 重构组件映射，传递props和事件
+
+    // 👇 关键修复：组件名必须和 components 注册的完全一致！
     const TEMPLATE_MAP = {
-      prev: h('ElPaginationPrev', {
+      prev: h('Prev', {
         props: {
           disabled: this.disabled,
           currentPage: this.internalCurrentPage,
@@ -82,7 +85,7 @@ export default {
         },
         on: { click: this.prev }
       }),
-      next: h('ElPaginationNext', {
+      next: h('Next', {
         props: {
           disabled: this.disabled,
           currentPage: this.internalCurrentPage,
@@ -100,7 +103,7 @@ export default {
         },
         on: { change: this.handleCurrentChange }
       }),
-      sizes: h('ElPaginationSizes', {
+      sizes: h('Sizes', {
         props: {
           pageSizes: this.pageSizes,
           popperClass: this.popperClass,
@@ -109,7 +112,7 @@ export default {
         },
         on: { 'size-change': this.handleSizeChange }
       }),
-      jumper: h('ElPaginationJumper', {
+      jumper: h('Jumper', {
         props: {
           currentPage: this.internalCurrentPage,
           pageCount: this.internalPageCount,
@@ -117,7 +120,7 @@ export default {
         },
         on: { jump: this.handleJump }
       }),
-      total: h('ElPaginationTotal', {
+      total: h('Total', {
         props: { total: this.total }
       }),
       slot: this.$slots.default ? h('div', this.$slots.default) : ''
@@ -257,7 +260,6 @@ export default {
   },
   beforeDestroy() {
     this.$off();
-    // 清空响应式数据，切断引用
     this.internalCurrentPage = null;
     this.internalPageSize = null;
     this.lastEmittedPage = null;

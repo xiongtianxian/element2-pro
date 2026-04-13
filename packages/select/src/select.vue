@@ -894,6 +894,7 @@
     },
 
     beforeDestroy() {
+      this.visible = false
       if (this.$el && this.handleResize) removeResizeListener(this.$el, this.handleResize);
 
       // 4. 清空选项数组（释放引用）

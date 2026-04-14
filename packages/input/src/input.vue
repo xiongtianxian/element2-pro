@@ -439,17 +439,31 @@
     beforeDestroy() {
       const input = this.getInput();
       if (input) {
-        // 🔥 不能删：清理焦点事件（泄漏根源）
+        // 强制失焦，打破浏览器强引用
+        input.blur();
+
+        // 全量解绑所有原生事件
         input.removeEventListener('focus', this.handleFocus);
         input.removeEventListener('blur', this.handleBlur);
+        input.removeEventListener('input', this.handleInput);
+        input.removeEventListener('change', this.handleChange);
+        input.removeEventListener('compositionstart', this.handleCompositionStart);
+        input.removeEventListener('compositionupdate', this.handleCompositionUpdate);
+        input.removeEventListener('compositionend', this.handleCompositionEnd);
       }
 
-      // 🔥 不能删：切断 DOM 强引用
+      // 切断ref强引用
       this.$refs.input = null;
       this.$refs.textarea = null;
 
-      // 🔥 不能删：清空所有事件
+      // 清空所有事件
       this.$off();
+
+      // 置空状态变量，切断闭包引用
+      this.focused = false;
+      this.hovering = false;
+      this.isComposing = false;
+      this.passwordVisible = false;
     }
   };
 </script>

@@ -435,6 +435,21 @@
 
     updated() {
       this.$nextTick(this.updateIconOffset);
+    },
+    beforeDestroy() {
+      const input = this.getInput();
+      if (input) {
+        // 🔥 不能删：清理焦点事件（泄漏根源）
+        input.removeEventListener('focus', this.handleFocus);
+        input.removeEventListener('blur', this.handleBlur);
+      }
+
+      // 🔥 不能删：切断 DOM 强引用
+      this.$refs.input = null;
+      this.$refs.textarea = null;
+
+      // 🔥 不能删：清空所有事件
+      this.$off();
     }
   };
 </script>

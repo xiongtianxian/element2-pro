@@ -905,6 +905,13 @@
       // 5. 移除所有自定义事件监听
       this.$off('handleOptionClick');
       this.$off('setSelected');
+
+      // 取消防抖函数的 pending 定时器，释放闭包
+      this.debouncedOnInputChange && this.debouncedOnInputChange.cancel();
+      this.debouncedQueryChange && this.debouncedQueryChange.cancel();
+      // 置空引用，彻底释放
+      this.debouncedOnInputChange = null;
+      this.debouncedQueryChange = null;
     }
   };
 </script>

@@ -907,11 +907,18 @@
       this.$off('setSelected');
 
       // 取消防抖函数的 pending 定时器，释放闭包
-      this.debouncedOnInputChange && this.debouncedOnInputChange.cancel();
-      this.debouncedQueryChange && this.debouncedQueryChange.cancel();
-      // 置空引用，彻底释放
-      this.debouncedOnInputChange = null;
-      this.debouncedQueryChange = null;
+
+      if(this.debouncedOnInputChange){
+        clearTimeout(this.debouncedOnInputChange.timeoutID)
+        this.debouncedOnInputChange = null;
+      }
+
+      if(this.debouncedQueryChange){
+        clearTimeout(this.debouncedQueryChange.timeoutID)
+        this.debouncedQueryChange = null;
+      }
+
+      this.$off();
     }
   };
 </script>

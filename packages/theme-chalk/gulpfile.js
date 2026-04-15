@@ -9,8 +9,7 @@ function compile() {
   return src('./src/*.scss')
     .pipe(sass.sync())
     .pipe(autoprefixer({
-      browsers: ['ie > 9', 'last 2 versions'],
-      cascade: false
+        overrideBrowserslist: ["> 1%", "last 2 versions"]
     }))
     .pipe(cssmin())
     .pipe(dest('./lib'));

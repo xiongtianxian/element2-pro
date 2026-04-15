@@ -437,33 +437,32 @@
       this.$nextTick(this.updateIconOffset);
     },
     beforeDestroy() {
+      // 1. 【核心】把 input 从 DOM 树中删除
       const input = this.getInput();
-      if (input) {
-        // 强制失焦，打破浏览器强引用
-        input.blur();
-
-        // 全量解绑所有原生事件
-        input.removeEventListener('focus', this.handleFocus);
-        input.removeEventListener('blur', this.handleBlur);
-        input.removeEventListener('input', this.handleInput);
-        input.removeEventListener('change', this.handleChange);
-        input.removeEventListener('compositionstart', this.handleCompositionStart);
-        input.removeEventListener('compositionupdate', this.handleCompositionUpdate);
-        input.removeEventListener('compositionend', this.handleCompositionEnd);
+      if (input && input.parentNode) {
+        input.parentNode.removeChild(input);
+      }
+      const textarea = this.$refs.textarea;
+      if (textarea && textarea.parentNode) {
+        textarea.parentNode.removeChild(textarea);
       }
 
-      // 切断ref强引用
+      // 2. 强制失焦，打破Chrome强引用
+      if (input) input.blur();
+
+      // 3. 清空选区
+      if (window.getSelection) {
+        window.getSelection().removeAllRanges();
+      }
+
+      // 4. 全局失焦
+      document.activeElement?.blur();
+      document.body.focus({ preventScroll: true });
+
+      // 5. 清空引用
       this.$refs.input = null;
       this.$refs.textarea = null;
-
-      // 清空所有事件
       this.$off();
-
-      // 置空状态变量，切断闭包引用
-      this.focused = false;
-      this.hovering = false;
-      this.isComposing = false;
-      this.passwordVisible = false;
     }
   };
 </script>

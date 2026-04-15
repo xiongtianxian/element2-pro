@@ -456,7 +456,9 @@
       }
 
       // 4. 全局失焦
-      document.activeElement?.blur();
+      if(document.activeElement){
+        document.activeElement.blur();
+      }
       document.body.focus({ preventScroll: true });
 
       // 5. 清空引用

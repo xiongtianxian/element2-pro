@@ -333,9 +333,6 @@
       this.menuItemsArray = null;
     },
 
-    deactivated() {
-      this.beforeDestroy();
-    },
 
   };
 </script>

@@ -50,12 +50,6 @@ export default {
     this.popperElm = null;
     this.referenceElm = null;
   },
-
-  // keep-alive 兼容
-  deactivated() {
-    this.beforeDestroy();
-  },
-
   mounted() {
     this.dropdown.popperElm = this.popperElm = this.$el;
     this.referenceElm = this.dropdown.$el;

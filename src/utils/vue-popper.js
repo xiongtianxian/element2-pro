@@ -196,8 +196,4 @@ export default {
     this.appended = false;
   },
 
-  deactivated() {
-    // keep-alive 也强制清理
-    this.beforeDestroy();
-  }
 };

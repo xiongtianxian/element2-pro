@@ -927,7 +927,9 @@ export default {
         if (typeof this.unwatchPickerOptions === 'function') {
           this.unwatchPickerOptions();
         }
-        this.picker.$el.parentNode.removeChild(this.picker.$el);
+        if(this.picker.$el.parentNode){
+          this.picker.$el.parentNode.removeChild(this.picker.$el);
+        }
       }
     },
 
